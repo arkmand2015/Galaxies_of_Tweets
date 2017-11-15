@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node {
+  cursor: move;
+  fill: green;
+  stroke: black;
+  stroke-width: .75px;
+}
+
+.link {
+	fill: #ff32f4;
+  stroke: #ff32f4;
+  stroke-opacity: 0.4;
+  stroke-width: 2px
+}
+
+</style>
+<body>
+<script src="d3.min.js"></script>
+<script>
+
+var width = 4600,
+    height = 2200;
+
+var width2 = 4600,
+    height2 = 2600;
+
+var force = d3.layout.force()
+    .charge(-2)
+    .linkDistance(function(node) { return 2})
+    .size([width, height]);
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width2)
+    .attr("height", height2);
+
+d3.json("networkdata_4.json", function(error, graph) {
+  if (error) throw error;
+
+  force
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(graph.links)
+      .enter().append("line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+  var node = svg.selectAll(".node")
+      .data(graph.nodes)
+      .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", function(node) { return node.radio*2 })
+      .style("fill", function(node) { return node.colors; })
+      .call(force.drag);
+
+  node.append("title")
+      .text(function(d) { return d.summary; return d.id; });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+  });
+});
+
+function dragstart(d) {
+  d3.select(this).classed("fixed", d.fixed = true);
+}
+
+</script>
